@@ -122,9 +122,11 @@ public final class MongoSourceTask extends SourceTask {
   private static final int UNKNOWN_FIELD_ERROR = 40415;
   private static final int FAILED_TO_PARSE_ERROR = 9;
   private static final String RESUME_TOKEN = "resume token";
+  private static final String RESUME_POINT = "resume point";
   private static final String NOT_FOUND = "not found";
   private static final String DOES_NOT_EXIST = "does not exist";
   private static final String INVALID_RESUME_TOKEN = "invalid resume token";
+  private static final String NO_LONGER_IN_THE_OPLOG = "no longer be in the oplog";
 
   private final Time time;
   private final AtomicBoolean isRunning = new AtomicBoolean();
@@ -452,12 +454,13 @@ public final class MongoSourceTask extends SourceTask {
     return e.getErrorCode() == INVALIDATED_RESUME_TOKEN_ERROR;
   }
 
-  private boolean resumeTokenNotFound(final MongoCommandException e) {
-    String errorMessage = e.getErrorMessage().toLowerCase(Locale.ROOT);
-    return errorMessage.contains(RESUME_TOKEN)
+  private boolean resumeTokenNotFound(final Exception e) {
+    String errorMessage = e.getMessage().toLowerCase(Locale.ROOT);
+    return (errorMessage.contains(RESUME_TOKEN) || errorMessage.contains(RESUME_POINT))
         && (errorMessage.contains(NOT_FOUND)
             || errorMessage.contains(DOES_NOT_EXIST)
-            || errorMessage.contains(INVALID_RESUME_TOKEN));
+            || errorMessage.contains(INVALID_RESUME_TOKEN)
+            || errorMessage.contains(NO_LONGER_IN_THE_OPLOG));
   }
 
   Map<String, Object> createPartitionMap(final MongoSourceConfig sourceConfig) {
@@ -597,6 +600,15 @@ public final class MongoSourceTask extends SourceTask {
           LOGGER.info(
               "An exception occurred when trying to get the next item from the Change Stream: {}",
               e.getMessage());
+          if (sourceConfig.tolerateErrors() && resumeTokenNotFound(e)) {
+            LOGGER.warn(
+                "===================================================================================\n"
+                    + "When the resume token is no longer available there is the potential for data loss.\n\n"
+                    + "Restarting the change stream with no resume token because `errors.tolerance=all`.\n"
+                    + "===================================================================================");
+            invalidatedCursor = true;
+            cursor = tryCreateCursor(sourceConfig, mongoClient, null);
+          }
         }
         return Optional.empty();
       }

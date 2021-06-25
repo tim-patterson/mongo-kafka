@@ -142,15 +142,27 @@ class MongoCopyDataManager implements AutoCloseable {
 
   private void copyDataFrom(final MongoNamespace namespace) {
     LOGGER.debug("Copying existing data from: {}", namespace.getFullName());
-    try {
-      mongoClient
-          .getDatabase(namespace.getDatabaseName())
-          .getCollection(namespace.getCollectionName(), RawBsonDocument.class)
-          .aggregate(createPipeline(sourceConfig, namespace))
-          .forEach(this::putToQueue);
-      namespacesToCopy.decrementAndGet();
-    } catch (Exception e) {
-      errorException = e;
+    Exception err = null;
+    for (int attempt = 0; attempt < 4; attempt++) {
+      try {
+        mongoClient
+            .getDatabase(namespace.getDatabaseName())
+            .getCollection(namespace.getCollectionName(), RawBsonDocument.class)
+            .aggregate(createPipeline(sourceConfig, namespace))
+            .forEach(this::putToQueue);
+        namespacesToCopy.decrementAndGet();
+        return;
+      } catch (Exception e) {
+        err = e;
+        LOGGER.error("Error when copying from {}", namespace.getFullName(), e);
+        try {
+          Thread.sleep(60000);
+        } catch (InterruptedException interruptedException) {
+        }
+      }
+    }
+    if (err != null) {
+      errorException = err;
     }
   }
 

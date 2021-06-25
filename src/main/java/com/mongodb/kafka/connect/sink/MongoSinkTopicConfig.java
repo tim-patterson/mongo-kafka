@@ -81,9 +81,11 @@ public class MongoSinkTopicConfig extends AbstractConfig {
     }
   }
 
+  private static final String EMPTY_STRING = "";
   private static final String TOPIC_CONFIG = "topic";
   static final String TOPIC_OVERRIDE_PREFIX = "topic.override.";
 
+  // Namespace
   public static final String DATABASE_CONFIG = "database";
   private static final String DATABASE_DISPLAY = "The MongoDB database name.";
   private static final String DATABASE_DOC = "The database for the sink to write.";
@@ -93,8 +95,65 @@ public class MongoSinkTopicConfig extends AbstractConfig {
   private static final String COLLECTION_DOC =
       "Optional, single sink collection name to write to. If following multiple topics then "
           + "this will be the default collection they are mapped to.";
-  private static final String COLLECTION_DEFAULT = "";
+  private static final String COLLECTION_DEFAULT = EMPTY_STRING;
 
+  // Namespace mapping
+  public static final String NAMESPACE_MAPPER_CONFIG = "namespace.mapper";
+  private static final String NAMESPACE_MAPPER_DISPLAY = "The namespace mapper class";
+  private static final String NAMESPACE_MAPPER_DOC =
+      "The class that determines the namespace to write the sink data to. "
+          + "By default this will be based on the 'database' configuration and either the topic "
+          + "name or the 'collection' configuration. "
+          + "Users can provide their own implementations of the 'NamespaceMapper' interface.";
+  private static final String NAMESPACE_MAPPER_DEFAULT =
+      "com.mongodb.kafka.connect.sink.namespace.mapping.DefaultNamespaceMapper";
+
+  public static final String FIELD_KEY_DATABASE_NAMESPACE_MAPPER_CONFIG =
+      "namespace.mapper.key.database.field";
+  private static final String FIELD_KEY_DATABASE_NAMESPACE_MAPPER_DISPLAY =
+      "The key field to use as the destination database name.";
+  private static final String FIELD_KEY_DATABASE_NAMESPACE_MAPPER_DOC =
+      "The key field to use as the destination database name. "
+          + "Requires the 'namespace.mapper' to be set to 'com.mongodb.kafka.connect.sink.topic.mapping.FieldPathNamespaceMapper'.";
+  private static final String FIELD_KEY_DATABASE_NAMESPACE_MAPPER_DEFAULT = EMPTY_STRING;
+
+  public static final String FIELD_KEY_COLLECTION_NAMESPACE_MAPPER_CONFIG =
+      "namespace.mapper.key.collection.field";
+  private static final String FIELD_KEY_COLLECTION_NAMESPACE_MAPPER_DISPLAY =
+      "The key field to use as the destination collection name.";
+  private static final String FIELD_KEY_COLLECTION_NAMESPACE_MAPPER_DOC =
+      "The key field to use as the destination collection name. "
+          + "Requires the 'namespace.mapper' to be set to 'com.mongodb.kafka.connect.sink.topic.mapping.FieldPathNamespaceMapper'.";
+  private static final String FIELD_KEY_COLLECTION_NAMESPACE_MAPPER_DEFAULT = EMPTY_STRING;
+
+  public static final String FIELD_VALUE_DATABASE_NAMESPACE_MAPPER_CONFIG =
+      "namespace.mapper.value.database.field";
+  private static final String FIELD_VALUE_DATABASE_NAMESPACE_MAPPER_DISPLAY =
+      "The value field to use as the destination database name.";
+  private static final String FIELD_VALUE_DATABASE_NAMESPACE_MAPPER_DOC =
+      "The value field to use as the destination database name. "
+          + "Requires the 'namespace.mapper' to be set to 'com.mongodb.kafka.connect.sink.topic.mapping.FieldPathNamespaceMapper'.";
+  private static final String FIELD_VALUE_DATABASE_NAMESPACE_MAPPER_DEFAULT = EMPTY_STRING;
+
+  public static final String FIELD_VALUE_COLLECTION_NAMESPACE_MAPPER_CONFIG =
+      "namespace.mapper.value.collection.field";
+  private static final String FIELD_VALUE_COLLECTION_NAMESPACE_MAPPER_DISPLAY =
+      "The value field to use as the destination collection name.";
+  private static final String FIELD_VALUE_COLLECTION_NAMESPACE_MAPPER_DOC =
+      "The value field to use as the destination collection name. "
+          + "Requires the 'namespace.mapper' to be set to 'com.mongodb.kafka.connect.sink.topic.mapping.FieldPathNamespaceMapper'.";
+  private static final String FIELD_VALUE_COLLECTION_NAMESPACE_MAPPER_DEFAULT = EMPTY_STRING;
+
+  public static final String FIELD_NAMESPACE_MAPPER_ERROR_IF_INVALID_CONFIG =
+      "namespace.mapper.error.if.invalid";
+  private static final String FIELD_NAMESPACE_MAPPER_ERROR_IF_INVALID_DISPLAY =
+      "Throw an error if the mapped field is missing or invalid.";
+  private static final String FIELD_NAMESPACE_MAPPER_ERROR_IF_INVALID_DOC =
+      "Throw an error if the mapped field is missing or invalid. Defaults to false. "
+          + "Requires the 'namespace.mapper' to be set to 'com.mongodb.kafka.connect.sink.topic.mapping.FieldPathNamespaceMapper'.";
+  private static final boolean FIELD_NAMESPACE_MAPPER_ERROR_IF_INVALID_DEFAULT = false;
+
+  // Writes
   public static final String MAX_NUM_RETRIES_CONFIG = "max.num.retries";
   private static final String MAX_NUM_RETRIES_DISPLAY = "Max number of retries";
   private static final String MAX_NUM_RETRIES_DOC =
@@ -106,118 +165,6 @@ public class MongoSinkTopicConfig extends AbstractConfig {
   private static final String RETRIES_DEFER_TIMEOUT_DOC =
       "How long in ms a retry should get deferred";
   private static final int RETRIES_DEFER_TIMEOUT_DEFAULT = 5000;
-
-  public static final String DOCUMENT_ID_STRATEGY_CONFIG = "document.id.strategy";
-  private static final String DOCUMENT_ID_STRATEGY_DISPLAY = "The document id strategy";
-  private static final String DOCUMENT_ID_STRATEGY_DOC =
-      "The IdStrategy class name to use for generating a unique document id (_id)";
-  private static final String DOCUMENT_ID_STRATEGY_DEFAULT =
-      "com.mongodb.kafka.connect.sink.processor.id.strategy.BsonOidStrategy";
-
-  public static final String DOCUMENT_ID_STRATEGY_OVERWRITE_EXISTING_CONFIG =
-      "document.id.strategy.overwrite.existing";
-  private static final String DOCUMENT_ID_STRATEGY_OVERWRITE_EXISTING_DISPLAY =
-      "The document id strategy overwrite existing setting";
-  private static final String DOCUMENT_ID_STRATEGY_OVERWRITE_EXISTING_DOC =
-      "Allows the document id strategy will overwrite existing `_id` values";
-  private static final boolean DOCUMENT_ID_STRATEGY_OVERWRITE_EXISTING_DEFAULT = false;
-
-  public static final String DOCUMENT_ID_STRATEGY_UUID_FORMAT_CONFIG =
-      "document.id.strategy.uuid.format";
-  private static final String DOCUMENT_ID_STRATEGY_UUID_FORMAT_DISPLAY =
-      "The document id strategy uuid format";
-  private static final String DOCUMENT_ID_STRATEGY_UUID_FORMAT_DOC =
-      "The bson output format when using the `UuidStrategy`. " + "Either `String` or `Binary`.";
-  private static final String DOCUMENT_ID_STRATEGY_UUID_FORMAT_DEFAULT = "string";
-
-  public static final String DOCUMENT_ID_STRATEGY_PARTIAL_KEY_PROJECTION_TYPE_CONFIG =
-      "document.id.strategy.partial.key.projection.type";
-  private static final String DOCUMENT_ID_STRATEGY_PARTIAL_KEY_PROJECTION_TYPE_DISPLAY =
-      "The document id strategy key projection";
-  private static final String DOCUMENT_ID_STRATEGY_PARTIAL_KEY_PROJECTION_TYPE_DOC =
-      "For use with the `PartialKeyStrategy` allows custom key fields to be projected for the id strategy "
-          + "Use either `AllowList` or `BlockList`.";
-  private static final String DOCUMENT_ID_STRATEGY_PARTIAL_KEY_PROJECTION_TYPE_DEFAULT = "";
-
-  public static final String DOCUMENT_ID_STRATEGY_PARTIAL_KEY_PROJECTION_LIST_CONFIG =
-      "document.id.strategy.partial.key.projection.list";
-  private static final String DOCUMENT_ID_STRATEGY_PARTIAL_KEY_PROJECTION_LIST_DISPLAY =
-      "The document id strategy key projection list";
-  private static final String DOCUMENT_ID_STRATEGY_PARTIAL_KEY_PROJECTION_LIST_DOC =
-      "For use with the `PartialKeyStrategy` allows custom key fields to be projected for the id strategy. "
-          + "A comma separated list of field names for key projection.";
-  private static final String DOCUMENT_ID_STRATEGY_PARTIAL_KEY_PROJECTION_LIST_DEFAULT = "";
-
-  public static final String DOCUMENT_ID_STRATEGY_PARTIAL_VALUE_PROJECTION_TYPE_CONFIG =
-      "document.id.strategy.partial.value.projection.type";
-  private static final String DOCUMENT_ID_STRATEGY_PARTIAL_VALUE_PROJECTION_TYPE_DISPLAY =
-      "The document id strategy value projection";
-  private static final String DOCUMENT_ID_STRATEGY_PARTIAL_VALUE_PROJECTION_TYPE_DOC =
-      "For use with the `PartialValueStrategy` allows custom value fields to be projected for the id strategy. "
-          + "Use either `AllowList` or `BlockList`.";
-  private static final String DOCUMENT_ID_STRATEGY_PARTIAL_VALUE_PROJECTION_TYPE_DEFAULT = "";
-
-  public static final String DOCUMENT_ID_STRATEGY_PARTIAL_VALUE_PROJECTION_LIST_CONFIG =
-      "document.id.strategy.partial.value.projection.list";
-  private static final String DOCUMENT_ID_STRATEGY_PARTIAL_VALUE_PROJECTION_LIST_DISPLAY =
-      "The document id strategy value projection list";
-  private static final String DOCUMENT_ID_STRATEGY_PARTIAL_VALUE_PROJECTION_LIST_DOC =
-      "For use with the `PartialValueStrategy` allows custom value fields to be projected for the id strategy. "
-          + "A comma separated list of field names for value projection.";
-  private static final String DOCUMENT_ID_STRATEGY_PARTIAL_VALUE_PROJECTION_LIST_DEFAULT = "";
-
-  public static final String KEY_PROJECTION_TYPE_CONFIG = "key.projection.type";
-  private static final String KEY_PROJECTION_TYPE_DISPLAY = "The key projection type";
-  private static final String KEY_PROJECTION_TYPE_DOC =
-      "The type of key projection to use " + "Use either `AllowList` or `BlockList`.";
-  private static final String KEY_PROJECTION_TYPE_DEFAULT = "none";
-
-  public static final String KEY_PROJECTION_LIST_CONFIG = "key.projection.list";
-  private static final String KEY_PROJECTION_LIST_DISPLAY = "The key projection list";
-  private static final String KEY_PROJECTION_LIST_DOC =
-      "A comma separated list of field names for key projection";
-  private static final String KEY_PROJECTION_LIST_DEFAULT = "";
-
-  public static final String VALUE_PROJECTION_TYPE_CONFIG = "value.projection.type";
-  private static final String VALUE_PROJECTION_TYPE_DISPLAY =
-      "The type of value projection to use " + "Use either `AllowList` or `BlockList`.";
-  private static final String VALUE_PROJECTION_TYPE_DOC = "The type of value projection to use";
-  private static final String VALUE_PROJECTION_TYPE_DEFAULT = "none";
-
-  public static final String VALUE_PROJECTION_LIST_CONFIG = "value.projection.list";
-  private static final String VALUE_PROJECTION_LIST_DISPLAY = "The value projection list";
-  private static final String VALUE_PROJECTION_LIST_DOC =
-      "A comma separated list of field names for value projection";
-  private static final String VALUE_PROJECTION_LIST_DEFAULT = "";
-
-  public static final String FIELD_RENAMER_MAPPING_CONFIG = "field.renamer.mapping";
-  private static final String FIELD_RENAMER_MAPPING_DISPLAY = "The field renamer mapping";
-  private static final String FIELD_RENAMER_MAPPING_DOC =
-      "An inline JSON array with objects describing field name mappings.\n"
-          + "Example: `[{\"oldName\":\"key.fieldA\",\"newName\":\"field1\"},{\"oldName\":\"value.xyz\",\"newName\":\"abc\"}]`";
-  private static final String FIELD_RENAMER_MAPPING_DEFAULT = "[]";
-
-  public static final String FIELD_RENAMER_REGEXP_CONFIG = "field.renamer.regexp";
-  public static final String FIELD_RENAMER_REGEXP_DISPLAY = "The field renamer regex";
-  private static final String FIELD_RENAMER_REGEXP_DOC =
-      "An inline JSON array with objects describing regexp settings.\n"
-          + "Example: `[{\"regexp\":\"^key\\\\\\\\..*my.*$\",\"pattern\":\"my\",\"replace\":\"\"},"
-          + "{\"regexp\":\"^value\\\\\\\\..*$\",\"pattern\":\"\\\\\\\\.\",\"replace\":\"_\"}]`";
-  private static final String FIELD_RENAMER_REGEXP_DEFAULT = "[]";
-
-  public static final String POST_PROCESSOR_CHAIN_CONFIG = "post.processor.chain";
-  private static final String POST_PROCESSOR_CHAIN_DISPLAY = "The post processor chain";
-  private static final String POST_PROCESSOR_CHAIN_DOC =
-      "A comma separated list of post processor classes to process the data before "
-          + "saving to MongoDB.";
-  private static final String POST_PROCESSOR_CHAIN_DEFAULT =
-      "com.mongodb.kafka.connect.sink.processor.DocumentIdAdder";
-
-  public static final String CHANGE_DATA_CAPTURE_HANDLER_CONFIG = "change.data.capture.handler";
-  private static final String CHANGE_DATA_CAPTURE_HANDLER_DISPLAY = "The CDC handler";
-  private static final String CHANGE_DATA_CAPTURE_HANDLER_DOC =
-      "The class name of the CDC handler to use for processing";
-  private static final String CHANGE_DATA_CAPTURE_HANDLER_DEFAULT = "";
 
   public static final String DELETE_ON_NULL_VALUES_CONFIG = "delete.on.null.values";
   private static final String DELETE_ON_NULL_VALUES_DISPLAY = "Delete on null values";
@@ -251,6 +198,119 @@ public class MongoSinkTopicConfig extends AbstractConfig {
           + "(NO rate limiting if n=0)";
   private static final int RATE_LIMITING_EVERY_N_DEFAULT = 0;
 
+  // Post processing
+  public static final String POST_PROCESSOR_CHAIN_CONFIG = "post.processor.chain";
+  private static final String POST_PROCESSOR_CHAIN_DISPLAY = "The post processor chain";
+  private static final String POST_PROCESSOR_CHAIN_DOC =
+      "A comma separated list of post processor classes to process the data before "
+          + "saving to MongoDB.";
+  private static final String POST_PROCESSOR_CHAIN_DEFAULT =
+      "com.mongodb.kafka.connect.sink.processor.DocumentIdAdder";
+
+  public static final String KEY_PROJECTION_TYPE_CONFIG = "key.projection.type";
+  private static final String KEY_PROJECTION_TYPE_DISPLAY = "The key projection type";
+  private static final String KEY_PROJECTION_TYPE_DOC =
+      "The type of key projection to use " + "Use either `AllowList` or `BlockList`.";
+  private static final String KEY_PROJECTION_TYPE_DEFAULT = "none";
+
+  public static final String KEY_PROJECTION_LIST_CONFIG = "key.projection.list";
+  private static final String KEY_PROJECTION_LIST_DISPLAY = "The key projection list";
+  private static final String KEY_PROJECTION_LIST_DOC =
+      "A comma separated list of field names for key projection";
+  private static final String KEY_PROJECTION_LIST_DEFAULT = EMPTY_STRING;
+
+  public static final String VALUE_PROJECTION_TYPE_CONFIG = "value.projection.type";
+  private static final String VALUE_PROJECTION_TYPE_DISPLAY =
+      "The type of value projection to use " + "Use either `AllowList` or `BlockList`.";
+  private static final String VALUE_PROJECTION_TYPE_DOC = "The type of value projection to use";
+  private static final String VALUE_PROJECTION_TYPE_DEFAULT = "none";
+
+  public static final String VALUE_PROJECTION_LIST_CONFIG = "value.projection.list";
+  private static final String VALUE_PROJECTION_LIST_DISPLAY = "The value projection list";
+  private static final String VALUE_PROJECTION_LIST_DOC =
+      "A comma separated list of field names for value projection";
+  private static final String VALUE_PROJECTION_LIST_DEFAULT = EMPTY_STRING;
+
+  public static final String FIELD_RENAMER_MAPPING_CONFIG = "field.renamer.mapping";
+  private static final String FIELD_RENAMER_MAPPING_DISPLAY = "The field renamer mapping";
+  private static final String FIELD_RENAMER_MAPPING_DOC =
+      "An inline JSON array with objects describing field name mappings.\n"
+          + "Example: `[{\"oldName\":\"key.fieldA\",\"newName\":\"field1\"},{\"oldName\":\"value.xyz\",\"newName\":\"abc\"}]`";
+  private static final String FIELD_RENAMER_MAPPING_DEFAULT = "[]";
+
+  public static final String FIELD_RENAMER_REGEXP_CONFIG = "field.renamer.regexp";
+  public static final String FIELD_RENAMER_REGEXP_DISPLAY = "The field renamer regex";
+  private static final String FIELD_RENAMER_REGEXP_DOC =
+      "An inline JSON array with objects describing regexp settings.\n"
+          + "Example: `[{\"regexp\":\"^key\\\\\\\\..*my.*$\",\"pattern\":\"my\",\"replace\":\"\"},"
+          + "{\"regexp\":\"^value\\\\\\\\..*$\",\"pattern\":\"\\\\\\\\.\",\"replace\":\"_\"}]`";
+  private static final String FIELD_RENAMER_REGEXP_DEFAULT = "[]";
+
+  // Id strategies
+  public static final String DOCUMENT_ID_STRATEGY_CONFIG = "document.id.strategy";
+  private static final String DOCUMENT_ID_STRATEGY_DISPLAY = "The document id strategy";
+  private static final String DOCUMENT_ID_STRATEGY_DOC =
+      "The IdStrategy class name to use for generating a unique document id (_id)";
+  private static final String DOCUMENT_ID_STRATEGY_DEFAULT =
+      "com.mongodb.kafka.connect.sink.processor.id.strategy.BsonOidStrategy";
+
+  public static final String DOCUMENT_ID_STRATEGY_OVERWRITE_EXISTING_CONFIG =
+      "document.id.strategy.overwrite.existing";
+  private static final String DOCUMENT_ID_STRATEGY_OVERWRITE_EXISTING_DISPLAY =
+      "The document id strategy overwrite existing setting";
+  private static final String DOCUMENT_ID_STRATEGY_OVERWRITE_EXISTING_DOC =
+      "Allows the document id strategy will overwrite existing `_id` values";
+  private static final boolean DOCUMENT_ID_STRATEGY_OVERWRITE_EXISTING_DEFAULT = false;
+
+  public static final String DOCUMENT_ID_STRATEGY_UUID_FORMAT_CONFIG =
+      "document.id.strategy.uuid.format";
+  private static final String DOCUMENT_ID_STRATEGY_UUID_FORMAT_DISPLAY =
+      "The document id strategy uuid format";
+  private static final String DOCUMENT_ID_STRATEGY_UUID_FORMAT_DOC =
+      "The bson output format when using the `UuidStrategy`. " + "Either `String` or `Binary`.";
+  private static final String DOCUMENT_ID_STRATEGY_UUID_FORMAT_DEFAULT = "string";
+
+  public static final String DOCUMENT_ID_STRATEGY_PARTIAL_KEY_PROJECTION_TYPE_CONFIG =
+      "document.id.strategy.partial.key.projection.type";
+  private static final String DOCUMENT_ID_STRATEGY_PARTIAL_KEY_PROJECTION_TYPE_DISPLAY =
+      "The document id strategy key projection";
+  private static final String DOCUMENT_ID_STRATEGY_PARTIAL_KEY_PROJECTION_TYPE_DOC =
+      "For use with the `PartialKeyStrategy` allows custom key fields to be projected for the id strategy "
+          + "Use either `AllowList` or `BlockList`.";
+  private static final String DOCUMENT_ID_STRATEGY_PARTIAL_KEY_PROJECTION_TYPE_DEFAULT =
+      EMPTY_STRING;
+
+  public static final String DOCUMENT_ID_STRATEGY_PARTIAL_KEY_PROJECTION_LIST_CONFIG =
+      "document.id.strategy.partial.key.projection.list";
+  private static final String DOCUMENT_ID_STRATEGY_PARTIAL_KEY_PROJECTION_LIST_DISPLAY =
+      "The document id strategy key projection list";
+  private static final String DOCUMENT_ID_STRATEGY_PARTIAL_KEY_PROJECTION_LIST_DOC =
+      "For use with the `PartialKeyStrategy` allows custom key fields to be projected for the id strategy. "
+          + "A comma separated list of field names for key projection.";
+  private static final String DOCUMENT_ID_STRATEGY_PARTIAL_KEY_PROJECTION_LIST_DEFAULT =
+      EMPTY_STRING;
+
+  public static final String DOCUMENT_ID_STRATEGY_PARTIAL_VALUE_PROJECTION_TYPE_CONFIG =
+      "document.id.strategy.partial.value.projection.type";
+  private static final String DOCUMENT_ID_STRATEGY_PARTIAL_VALUE_PROJECTION_TYPE_DISPLAY =
+      "The document id strategy value projection";
+  private static final String DOCUMENT_ID_STRATEGY_PARTIAL_VALUE_PROJECTION_TYPE_DOC =
+      "For use with the `PartialValueStrategy` allows custom value fields to be projected for the id strategy. "
+          + "Use either `AllowList` or `BlockList`.";
+  private static final String DOCUMENT_ID_STRATEGY_PARTIAL_VALUE_PROJECTION_TYPE_DEFAULT =
+      EMPTY_STRING;
+
+  public static final String DOCUMENT_ID_STRATEGY_PARTIAL_VALUE_PROJECTION_LIST_CONFIG =
+      "document.id.strategy.partial.value.projection.list";
+  private static final String DOCUMENT_ID_STRATEGY_PARTIAL_VALUE_PROJECTION_LIST_DISPLAY =
+      "The document id strategy value projection list";
+  private static final String DOCUMENT_ID_STRATEGY_PARTIAL_VALUE_PROJECTION_LIST_DOC =
+      "For use with the `PartialValueStrategy` allows custom value fields to be projected for the id strategy. "
+          + "A comma separated list of field names for value projection.";
+  private static final String DOCUMENT_ID_STRATEGY_PARTIAL_VALUE_PROJECTION_LIST_DEFAULT =
+      EMPTY_STRING;
+
+  // Errors
   public static final String ERRORS_TOLERANCE_CONFIG = "errors.tolerance";
   public static final String ERRORS_TOLERANCE_DISPLAY = "Error Tolerance";
   public static final ErrorTolerance ERRORS_TOLERANCE_DEFAULT = ErrorTolerance.NONE;
@@ -259,6 +319,10 @@ public class MongoSinkTopicConfig extends AbstractConfig {
           + "and signals that any error will result in an immediate connector task failure; 'all' "
           + "changes the behavior to skip over problematic records.";
 
+  public static final String OVERRIDE_ERRORS_TOLERANCE_CONFIG = "mongo.errors.tolerance";
+  public static final String OVERRIDE_ERRORS_TOLERANCE_DOC =
+      "Use this property if you would like to configure the connector's error handling behavior differently from the Connect framework's.";
+
   public static final String ERRORS_LOG_ENABLE_CONFIG = "errors.log.enable";
   public static final String ERRORS_LOG_ENABLE_DISPLAY = "Log Errors";
   public static final boolean ERRORS_LOG_ENABLE_DEFAULT = false;
@@ -266,60 +330,16 @@ public class MongoSinkTopicConfig extends AbstractConfig {
       "If true, write each error and the details of the failed operation and problematic record "
           + "to the Connect application log. This is 'false' by default, so that only errors that are not tolerated are reported.";
 
-  public static final String NAMESPACE_MAPPER_CONFIG = "namespace.mapper";
-  private static final String NAMESPACE_MAPPER_DISPLAY = "The namespace mapper class";
-  private static final String NAMESPACE_MAPPER_DOC =
-      "The class that determines the namespace to write the sink data to. "
-          + "By default this will be based on the 'database' configuration and either the topic "
-          + "name or the 'collection' configuration. "
-          + "Users can provide their own implementations of the 'NamespaceMapper' interface.";
-  private static final String NAMESPACE_MAPPER_DEFAULT =
-      "com.mongodb.kafka.connect.sink.namespace.mapping.DefaultNamespaceMapper";
+  public static final String OVERRIDE_ERRORS_LOG_ENABLE_CONFIG = "mongo.errors.log.enable";
+  public static final String OVERRIDE_ERRORS_LOG_ENABLE_DOC =
+      "Use this property if you would like to configure the connector's error handling behavior differently from the mapping Connect framework's.";
 
-  public static final String FIELD_KEY_DATABASE_NAMESPACE_MAPPER_CONFIG =
-      "namespace.mapper.key.database.field";
-  private static final String FIELD_KEY_DATABASE_NAMESPACE_MAPPER_DISPLAY =
-      "The key field to use as the destination database name.";
-  private static final String FIELD_KEY_DATABASE_NAMESPACE_MAPPER_DOC =
-      "The key field to use as the destination database name. "
-          + "Requires the 'namespace.mapper' to be set to 'com.mongodb.kafka.connect.sink.topic.mapping.FieldPathNamespaceMapper'.";
-  private static final String FIELD_KEY_DATABASE_NAMESPACE_MAPPER_DEFAULT = "";
-
-  public static final String FIELD_KEY_COLLECTION_NAMESPACE_MAPPER_CONFIG =
-      "namespace.mapper.key.collection.field";
-  private static final String FIELD_KEY_COLLECTION_NAMESPACE_MAPPER_DISPLAY =
-      "The key field to use as the destination collection name.";
-  private static final String FIELD_KEY_COLLECTION_NAMESPACE_MAPPER_DOC =
-      "The key field to use as the destination collection name. "
-          + "Requires the 'namespace.mapper' to be set to 'com.mongodb.kafka.connect.sink.topic.mapping.FieldPathNamespaceMapper'.";
-  private static final String FIELD_KEY_COLLECTION_NAMESPACE_MAPPER_DEFAULT = "";
-
-  public static final String FIELD_VALUE_DATABASE_NAMESPACE_MAPPER_CONFIG =
-      "namespace.mapper.value.database.field";
-  private static final String FIELD_VALUE_DATABASE_NAMESPACE_MAPPER_DISPLAY =
-      "The value field to use as the destination database name.";
-  private static final String FIELD_VALUE_DATABASE_NAMESPACE_MAPPER_DOC =
-      "The value field to use as the destination database name. "
-          + "Requires the 'namespace.mapper' to be set to 'com.mongodb.kafka.connect.sink.topic.mapping.FieldPathNamespaceMapper'.";
-  private static final String FIELD_VALUE_DATABASE_NAMESPACE_MAPPER_DEFAULT = "";
-
-  public static final String FIELD_VALUE_COLLECTION_NAMESPACE_MAPPER_CONFIG =
-      "namespace.mapper.value.collection.field";
-  private static final String FIELD_VALUE_COLLECTION_NAMESPACE_MAPPER_DISPLAY =
-      "The value field to use as the destination collection name.";
-  private static final String FIELD_VALUE_COLLECTION_NAMESPACE_MAPPER_DOC =
-      "The value field to use as the destination collection name. "
-          + "Requires the 'namespace.mapper' to be set to 'com.mongodb.kafka.connect.sink.topic.mapping.FieldPathNamespaceMapper'.";
-  private static final String FIELD_VALUE_COLLECTION_NAMESPACE_MAPPER_DEFAULT = "";
-
-  public static final String FIELD_NAMESPACE_MAPPER_ERROR_IF_INVALID_CONFIG =
-      "namespace.mapper.error.if.invalid";
-  private static final String FIELD_NAMESPACE_MAPPER_ERROR_IF_INVALID_DISPLAY =
-      "Throw an error if the mapped field is missing or invalid.";
-  private static final String FIELD_NAMESPACE_MAPPER_ERROR_IF_INVALID_DOC =
-      "Throw an error if the mapped field is missing or invalid. Defaults to false. "
-          + "Requires the 'namespace.mapper' to be set to 'com.mongodb.kafka.connect.sink.topic.mapping.FieldPathNamespaceMapper'.";
-  private static final boolean FIELD_NAMESPACE_MAPPER_ERROR_IF_INVALID_DEFAULT = false;
+  // Change Data Capture
+  public static final String CHANGE_DATA_CAPTURE_HANDLER_CONFIG = "change.data.capture.handler";
+  private static final String CHANGE_DATA_CAPTURE_HANDLER_DISPLAY = "The CDC handler";
+  private static final String CHANGE_DATA_CAPTURE_HANDLER_DOC =
+      "The class name of the CDC handler to use for processing";
+  private static final String CHANGE_DATA_CAPTURE_HANDLER_DEFAULT = EMPTY_STRING;
 
   private static final Pattern CLASS_NAME =
       Pattern.compile("\\p{javaJavaIdentifierStart}\\p{javaJavaIdentifierPart}*");
@@ -353,7 +373,7 @@ public class MongoSinkTopicConfig extends AbstractConfig {
     this(topic, originals, true);
   }
 
-  private MongoSinkTopicConfig(
+  public MongoSinkTopicConfig(
       final String topic, final Map<String, String> originals, final boolean initializeAll) {
     super(CONFIG, createSinkTopicOriginals(topic, originals));
     this.topic = topic;
@@ -379,12 +399,22 @@ public class MongoSinkTopicConfig extends AbstractConfig {
   }
 
   public boolean logErrors() {
-    return !tolerateErrors() || getBoolean(ERRORS_LOG_ENABLE_CONFIG);
+    return !tolerateErrors()
+        || ConfigHelper.getOverrideOrFallback(
+            this,
+            AbstractConfig::getBoolean,
+            OVERRIDE_ERRORS_LOG_ENABLE_CONFIG,
+            ERRORS_LOG_ENABLE_CONFIG);
   }
 
   public boolean tolerateErrors() {
-    return ErrorTolerance.valueOf(getString(ERRORS_TOLERANCE_CONFIG).toUpperCase())
-        .equals(ErrorTolerance.ALL);
+    String errorsTolerance =
+        ConfigHelper.getOverrideOrFallback(
+            this,
+            AbstractConfig::getString,
+            OVERRIDE_ERRORS_TOLERANCE_CONFIG,
+            ERRORS_TOLERANCE_CONFIG);
+    return ErrorTolerance.valueOf(errorsTolerance.toUpperCase()).equals(ErrorTolerance.ALL);
   }
 
   private <T> T configureInstance(final T instance) {
@@ -573,11 +603,14 @@ public class MongoSinkTopicConfig extends AbstractConfig {
               }
             });
 
-    props.keySet().stream()
-        .filter(k -> k.startsWith(TOPIC_OVERRIDE_PREFIX))
-        .map(k -> k.substring(TOPIC_OVERRIDE_PREFIX.length()).split("\\.")[0])
-        .forEach(t -> results.putAll(validateAll(t, props)));
-
+    if (props.keySet().stream().anyMatch(k -> k.startsWith(TOPIC_OVERRIDE_PREFIX))) {
+      props.keySet().stream()
+          .filter(k -> k.startsWith(TOPIC_OVERRIDE_PREFIX))
+          .map(k -> k.substring(TOPIC_OVERRIDE_PREFIX.length()).split("\\.")[0])
+          .forEach(t -> results.putAll(validateAll(t, props)));
+    } else {
+      results.putAll(MongoSinkTopicConfig.validateAll("test", props));
+    }
     return results;
   }
 
@@ -594,6 +627,7 @@ public class MongoSinkTopicConfig extends AbstractConfig {
     return topicConfig;
   }
 
+  @SuppressWarnings("deprecated")
   private static ConfigDef createConfigDef() {
 
     ConfigDef configDef = new ConfigDef();
@@ -952,6 +986,17 @@ public class MongoSinkTopicConfig extends AbstractConfig {
         ++orderInGroup,
         Width.SHORT,
         ERRORS_TOLERANCE_DISPLAY);
+    configDef.define(
+        OVERRIDE_ERRORS_TOLERANCE_CONFIG,
+        Type.STRING,
+        ERRORS_TOLERANCE_DEFAULT.value(),
+        Validators.EnumValidatorAndRecommender.in(ErrorTolerance.values()),
+        Importance.MEDIUM,
+        OVERRIDE_ERRORS_TOLERANCE_DOC,
+        group,
+        ++orderInGroup,
+        Width.SHORT,
+        ERRORS_TOLERANCE_DISPLAY);
 
     configDef.define(
         ERRORS_LOG_ENABLE_CONFIG,
@@ -959,6 +1004,16 @@ public class MongoSinkTopicConfig extends AbstractConfig {
         ERRORS_LOG_ENABLE_DEFAULT,
         Importance.MEDIUM,
         ERRORS_LOG_ENABLE_DOC,
+        group,
+        ++orderInGroup,
+        Width.SHORT,
+        ERRORS_LOG_ENABLE_DISPLAY);
+    configDef.define(
+        OVERRIDE_ERRORS_LOG_ENABLE_CONFIG,
+        Type.BOOLEAN,
+        ERRORS_LOG_ENABLE_DEFAULT,
+        Importance.MEDIUM,
+        OVERRIDE_ERRORS_LOG_ENABLE_DOC,
         group,
         ++orderInGroup,
         Width.SHORT,
@@ -977,6 +1032,7 @@ public class MongoSinkTopicConfig extends AbstractConfig {
         ++orderInGroup,
         ConfigDef.Width.MEDIUM,
         CHANGE_DATA_CAPTURE_HANDLER_DISPLAY);
+
     return configDef;
   }
 }
